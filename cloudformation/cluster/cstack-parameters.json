@@ -1,0 +1,30 @@
+[
+    {
+        "ParameterKey": "AvailZone",
+        "ParameterValue": "us-west-2c"
+    },
+    {
+        "ParameterKey": "CCAMI",
+        "ParameterValue": "ami-efd0428f"
+    },
+    {
+        "ParameterKey": "CCInstanceType",
+        "ParameterValue": "t2.2xlarge"
+    },
+    {
+        "ParameterKey": "CCName1",
+        "ParameterValue": "k8s-master"
+    },
+    {
+        "ParameterKey": "CCName2",
+        "ParameterValue": "k8s-node"
+    },
+    {
+        "ParameterKey": "InstanceCount",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "SSHKey",
+        "ParameterValue": "ocontrail"
+    }
+]

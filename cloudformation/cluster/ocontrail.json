@@ -1,0 +1,476 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Conditions": {
+        "Launch1": {
+            "Fn::Equals": [
+                "1",
+                "1"
+            ]
+        },
+        "Launch2": {
+            "Fn::Not": [
+                {
+                    "Fn::Equals": [
+                        "1",
+                        {
+                            "Ref": "InstanceCount"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "Description": "CloudFormation template to create open contrail controller and compute instances",
+    "Outputs": {
+        "AMI": {
+            "Description": "AMI Image used to launch instance",
+            "Value": {
+                "Ref": "CCAMI"
+            }
+        },
+        "AvailabilityZone": {
+            "Description": "Availablity Zone the Instance was launched.",
+            "Value": {
+                "Ref": "AvailZone"
+            }
+        },
+        "CCPrivateIP": {
+            "Description": "Contrail Controller (eth0) Private IP Address",
+            "Value": {
+                "Fn::GetAtt": [
+                    "cc1",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "CCPublicIP": {
+            "Description": "Contrail Controller EIP Address",
+            "Value": {
+                "Fn::GetAtt": [
+                    "cc1",
+                    "PublicIp"
+                ]
+            }
+        },
+        "ComputePrivateIP": {
+            "Condition": "Launch2",
+            "Description": "Compute node (eth0) Private IP Address",
+            "Value": {
+                "Fn::GetAtt": [
+                    "cc2",
+                    "PrivateIp"
+                ]
+            }
+        },
+        "ComputePublicIP": {
+            "Condition": "Launch2",
+            "Description": "Compute node EIP Address",
+            "Value": {
+                "Fn::GetAtt": [
+                    "cc2",
+                    "PublicIp"
+                ]
+            }
+        },
+        "Subnet": {
+            "Description": "Subnet Name",
+            "Value": {
+                "Ref": "ccSubnet"
+            }
+        },
+        "VPC": {
+            "Description": "VPC Name",
+            "Value": {
+                "Ref": "ccVPC"
+            }
+        }
+    },
+    "Parameters": {
+        "AvailZone": {
+            "Description": "Choose the Availability Zone to create the subnets and launch CC instance",
+            "Type": "AWS::EC2::AvailabilityZone::Name"
+        },
+        "CCAMI": {
+            "Description": "Choose AMI that will be used for CC instances",
+            "Type": "AWS::EC2::Image::Id"
+        },
+        "CCInstanceType": {
+            "AllowedValues": [
+                "t2.2xlarge",
+                "t2.micro",
+                "m4.xlarge",
+                "m4.2xlarge",
+                "m4.4xlarge",
+                "m4.10xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "c4.4xlarge",
+                "c4.8xlarge"
+            ],
+            "Default": "t2.2xlarge",
+            "Description": "Instance type that is needed",
+            "Type": "String"
+        },
+        "CCName1": {
+            "Description": "Name of Contrail Controller instance(1)",
+            "MaxLength": "16",
+            "Type": "String"
+        },
+        "CCName2": {
+            "Description": "Name of Compute node instance(2)",
+            "MaxLength": "16",
+            "Type": "String"
+        },
+        "CCSubnet": {
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x.",
+            "Default": "10.59.0.0/24",
+            "Description": "Enter the subnet to where the interfaces will go",
+            "Type": "String"
+        },
+        "CCVPC": {
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x.",
+            "Default": "10.59.0.0/16",
+            "Description": "CIDR block for CC VPC.",
+            "Type": "String"
+        },
+        "InstanceCount": {
+            "ConstraintDescription": "Must be a number between 1 and 3",
+            "Default": "1",
+            "Description": "Number of instances to start (must be between 1 and 3)",
+            "MaxValue": "2",
+            "MinValue": "1",
+            "Type": "Number"
+        },
+        "SSHCidrAllow": {
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "must be a valid CIDR range of the form x.x.x.x/x.",
+            "Default": "0.0.0.0/0",
+            "Description": "CIDR IP range allowed to shh to the contrail instances",
+            "MaxLength": "18",
+            "MinLength": "9",
+            "Type": "String"
+        },
+        "SSHKey": {
+            "Default": "CC",
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to instances",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        }
+    },
+    "Resources": {
+        "VPCPublicRoute": {
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "iGW"
+                },
+                "RouteTableId": {
+                    "Ref": "VPCRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "VPCRouteTable": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "CCName1"
+                                    },
+                                    "RouteTable"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ccVPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "VPCSubnetRouteTableAssociation": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "VPCRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "ccSubnet"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "cc1": {
+            "Condition": "Launch1",
+            "DependsOn": [
+                "ccSubnet"
+            ],
+            "Properties": {
+                "AvailabilityZone": {
+                    "Ref": "AvailZone"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "90"
+                        }
+                    }
+                ],
+                "ImageId": {
+                    "Ref": "CCAMI"
+                },
+                "InstanceType": {
+                    "Ref": "CCInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "SSHKey"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "ccSecGrp"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "ccSubnet"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "CCName1"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "export DEBIAN_FRONTEND=noninteractive\n",
+                                "sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/\n",
+                                "sudo -s <<EOF\n",
+                                "sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config\n",
+                                "sed -i 's/^StrictModes.*/#StrictModes/g' /etc/ssh/sshd_config\n",
+                                "sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config\n",
+                                "echo 'root:contrail123' | chpasswd\n",
+                                "systemctl restart sshd\n",
+                                "apt-get update\n",
+                                "apt-get -y install ntp ntpdate\n",
+                                "\n",
+                                "hostnamectl set-hostname ",
+                                "'",
+                                {
+                                    "Ref": "CCName1"
+                                },
+                                "'",
+                                "\n",
+                                "service ntp stop;ntpdate 1.ubuntu.pool.ntp.org; service ntp start\n",
+                                "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -\n",
+                                "apt-get install -y apt-transport-https\n",
+                                "echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list\n",
+                                "apt-get update\n",
+                                "apt-get install -y python2.7\n",
+                                "ln -s /usr/bin/python2.7 /usr/bin/python\n",
+                                "apt-get install -y docker.io\n",
+                                "apt-get install -y kubelet kubeadm kubectl kubernetes-cni\n",
+                                "kubeadm init\n",
+                                "sleep 130\n",
+                                "cp /etc/kubernetes/admin.conf $HOME/\n",
+                                "chown $(id -u):$(id -g) $HOME/admin.conf\n",
+                                "export KUBECONFIG=$HOME/admin.conf\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "cc2": {
+            "Condition": "Launch2",
+            "Properties": {
+                "AvailabilityZone": {
+                    "Ref": "AvailZone"
+                },
+                "ImageId": {
+                    "Ref": "CCAMI"
+                },
+                "InstanceType": {
+                    "Ref": "CCInstanceType"
+                },
+                "KeyName": {
+                    "Ref": "SSHKey"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeleteOnTermination": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "ccSecGrp"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "ccSubnet"
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "CCName2"
+                        }
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "export DEBIAN_FRONTEND=noninteractive\n",
+                                "sudo cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/\n",
+                                "sudo -s <<EOF\n",
+                                "sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config\n",
+                                "sed -i 's/^StrictModes.*/#StrictModes/g' /etc/ssh/sshd_config\n",
+                                "sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config\n",
+                                "echo 'root:contrail123' | chpasswd\n",
+                                "systemctl restart sshd\n",
+                                "apt-get update\n"
+                            ]
+                        ]
+                    }
+                }
+            },
+            "Type": "AWS::EC2::Instance"
+        },
+        "ccSecGrp": {
+            "Properties": {
+                "GroupDescription": "CC Security Group Rules",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "0",
+                        "IpProtocol": "-1",
+                        "ToPort": "65535"
+                    }
+                ],
+                "SecurityGroupIngress": [
+                    {
+                        "CidrIp": "0.0.0.0/0",
+                        "FromPort": "0",
+                        "IpProtocol": "-1",
+                        "ToPort": "65535"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ccVPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "ccSubnet": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Ref": "AvailZone"
+                },
+                "CidrBlock": {
+                    "Ref": "CCSubnet"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "CCName1"
+                                    },
+                                    "Subnet"
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "ccVPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "ccVPC": {
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "CCVPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "CCName1"
+                                    },
+                                    "VPC"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::VPC"
+        },
+        "iGW": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "-",
+                                [
+                                    {
+                                        "Ref": "CCName1"
+                                    },
+                                    "iGW"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "iGWToInternet": {
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "iGW"
+                },
+                "VpcId": {
+                    "Ref": "ccVPC"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        }
+    }
+}
