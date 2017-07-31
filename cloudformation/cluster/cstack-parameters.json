@@ -21,7 +21,7 @@
     },
     {
         "ParameterKey": "InstanceCount",
-        "ParameterValue": "1"
+        "ParameterValue": "2"
     },
     {
         "ParameterKey": "SSHKey",

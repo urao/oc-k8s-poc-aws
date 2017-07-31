@@ -290,10 +290,7 @@
                                 "apt-get install -y docker.io\n",
                                 "apt-get install -y kubelet kubeadm kubectl kubernetes-cni\n",
                                 "kubeadm init\n",
-                                "sleep 130\n",
-                                "cp /etc/kubernetes/admin.conf $HOME/\n",
-                                "chown $(id -u):$(id -g) $HOME/admin.conf\n",
-                                "export KUBECONFIG=$HOME/admin.conf\n"
+                                "sleep 130\n"
                             ]
                         ]
                     }
@@ -307,6 +304,14 @@
                 "AvailabilityZone": {
                     "Ref": "AvailZone"
                 },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/sda1",
+                        "Ebs": {
+                            "VolumeSize": "90"
+                        }
+                    }
+                ],
                 "ImageId": {
                     "Ref": "CCAMI"
                 },
@@ -353,7 +358,25 @@
                                 "sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config\n",
                                 "echo 'root:contrail123' | chpasswd\n",
                                 "systemctl restart sshd\n",
-                                "apt-get update\n"
+                                "apt-get update\n",
+                                "apt-get -y install ntp ntpdate\n",
+                                "\n",
+                                "hostnamectl set-hostname ",
+                                "'",
+                                {
+                                    "Ref": "CCName2"
+                                },
+                                "'",
+                                "\n",
+                                "service ntp stop;ntpdate 1.ubuntu.pool.ntp.org; service ntp start\n",
+                                "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -\n",
+                                "apt-get install -y apt-transport-https\n",
+                                "echo 'deb http://apt.kubernetes.io/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list\n",
+                                "apt-get update\n",
+                                "apt-get install -y python2.7\n",
+                                "ln -s /usr/bin/python2.7 /usr/bin/python\n",
+                                "apt-get install -y docker.io\n",
+                                "apt-get install -y kubelet kubeadm kubectl kubernetes-cni\n"
                             ]
                         ]
                     }
