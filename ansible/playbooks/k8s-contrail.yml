@@ -1,0 +1,29 @@
+---
+- name: Common system settings on all the hosts
+  hosts: all
+  remote_user: root
+  #nothing to do in common in both the nodes as of now hence skipping
+
+- name: Setup master node 
+  hosts: master
+  remote_user: root
+  tasks:
+    - name: Set kubeconfig 
+      command: "{{item}}"
+      with_items:
+       - cp /etc/kubernetes/admin.conf $HOME/
+       - chown $(id -u):$(id -g) $HOME/admin.conf
+       - export KUBECONFIG=$HOME/admin.conf
+    - name: Populate hosts file
+      shell: printf '127.0.0.1  {{ master_hostname }}\n' >> /etc/hosts
+    - name: Get kubeadm token
+      command: kubeadm token list | awk {'print $1'} | sed -n 2p
+      register: command_output
+    - debug: msg="{{command_output.stdout}}"
+
+- name: Setup slave node 
+  hosts: nodes
+  remote_user: root
+  tasks:
+    - name: Populate hosts file
+      shell: printf '127.0.0.1  {{ node_hostname }}\n' >> /etc/hosts
