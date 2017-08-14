@@ -23,12 +23,12 @@ Steps to deploy contrail cloud:
 6. Create VPC, Subnet and 2 EC2 instances with host OS Ubuntu 16.04
    1. Run ./create_ocontrail_stack.sh \<stack-name\> ocontrail.json cstack-parameters.json
 7. Verify cloudformation stack and populate cluster information 
-   1. Run ./verify_ocontrail_stack.sh <stack-name>
-8. Modify contrail_package, contrail_ansible_package and contrail_version parameters in ansible/playbooks/inventory/group_vars/all.yml
+   1. Run ./verify_ocontrail_stack.sh \<stack-name\>
+8. Modify contrail_package, contrail_ansible_package and contrail_version parameters in ansible/playbooks/inventory/group_vars/all.yml file
 9. Run ansible playbook to deploy opencontrail+k8s
    1. Change directory 'cd ansible/playbooks'
    2. Run 'ansible-playbook -i inventory/ k8s-contrail.yml' 
-10. Connect to contrail-webui, using public ip address of CCName1 EC2 instance, credentials admin and contrail123
+10. Connect to contrail-webui, using public IP address of CCName1 EC2 instance with credentials admin/contrail123
 
 
 Delete contrail cloud stack:
