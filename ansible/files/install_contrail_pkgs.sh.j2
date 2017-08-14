@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+LANG=C
+
+WORKDIR=$HOME/.installc
+
+install_deps () {
+    sudo apt-get -y install \
+        python-setuptools \
+        sshpass \
+        gcc \
+        libffi-dev \
+        python-dev \
+        libssl-dev \
+    easy_install pip
+    pip install virtualenv
+}
+
+enable_passwordless () { 
+    yes | ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
+    sshpass -p contrail123 ssh-copy-id -o 'StrictHostKeyChecking=no' root@{{ master_ip }}
+    sshpass -p contrail123 ssh-copy-id -o 'StrictHostKeyChecking=no' root@{{ node_ip }}
+}
+
+make_kubernetes_changes () { 
+    sed -i "s/KUBELET_NETWORK_ARGS=/KUBELET_NETWORK_NOPE=/g" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    kubectl create clusterrolebinding contrail-kube-manager --clusterrole=cluster-admin --serviceaccount=default:default
+    token=$(kubectl describe secret default | grep token: | awk {'print $2'}) 
+    echo "kubernetes_access_token: $token" >> /root/contrail_ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+}
+
+create_virtualenv() {
+    virtualenv $WORKDIR
+    . $WORKDIR/bin/activate 
+    pip install ansible==2.2.0.0
+}
+
+activate_venv() {
+    . $WORKDIR/bin/activate
+}
+
+clean_virtualenv() {
+    if [ -d $WORKDIR ]; then
+        echo "removing $WORKDIR"
+        rm -rf $WORKDIR
+    fi
+}
+
+run_ansible_cmd() { 
+    cd $HOME/contrail_ansible/playbooks/ && ansible-playbook -i inventory/my-inventory site.yml
+}
+
+#main
+set -ex
+
+# change permission
+chown $(id -u):$(id -g) $HOME/admin.conf
+export KUBECONFIG=$HOME/admin.conf
+
+install_deps
+enable_passwordless
+make_kubernetes_changes
+create_virtualenv
+activate_venv
+run_ansible_cmd
+clean_virtualenv

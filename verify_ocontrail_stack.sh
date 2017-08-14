@@ -2,15 +2,21 @@
 
 stackname=$1
 
-if [ -z "$stackname" ]; then
-    echo "stack name not set"
-    exit 1
+#check if there are enough arguments
+if [ $# -eq 1 ]; then
+   if [ -z "$stackname" ]; then
+       echo "stack name not set"
+       exit 1
+   fi
+else
+   echo "Usage: $0 [stackname]"
+   exit 1
 fi
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-echo "Verifying OpenContrail $stackname stack for POC"
-echo "Checking wether EC2 instances are UP and RUNNING"
+echo -e "Verifying OpenContrail $stackname stack for POC\n"
+echo -e "Checking wether EC2 instances are UP and RUNNING\n"
 echo
 
 master=$(cat cloudformation/cluster/cstack-parameters.json | grep CCName1 -A2 | awk '{print $2}' | sed -n 2p)
@@ -22,8 +28,11 @@ echo $node
 aws ec2 wait instance-running --filters "Name=tag:Name,Values="$master""
 aws ec2 wait instance-running --filters "Name=tag:Name,Values="$node""
 
-echo "EC2 insances are RUNNING"
+echo -e "EC2 insances are RUNNING\n"
 echo
+
+# delete hosts file
+rm -rf $DIR/ansible/playbooks/inventory/hosts
 
 echo "[master]">>$DIR/ansible/playbooks/inventory/hosts
 master_ip=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$master" | grep PublicIpAddress | cut -d':' -f2 | tr -d '", ')
@@ -47,8 +56,41 @@ node01_pip=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=$node" |
 echo Masterp: "${master_pip}"
 echo Nodep: "${node01_pip}"
 
-echo "master_hostname: $master">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
-echo "node_hostname: $node">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
+# delete all.yml file
+rm -rf $DIR/ansible/playbooks/inventory/group_vars/all.yml
+
+# create new one
+cat > $DIR/ansible/playbooks/inventory/group_vars/all.yml <<EOF
+###################################################
+# Ansible specific vars
+##
+
+# ansible connection details
+ansible_user: root
+ansible_connection: ssh
+ansible_ssh_pass: contrail123
+host_key_checking: false
+
+###################################################
+# Common settings for contrail
+##
+
+# contrail package
+# example 
+#contrail_package: contrail-kubernetes-docker-images_4.0.0.0-20.tgz
+#contrail_ansible_package : contrail-ansible-4.0.0.0-20.tar.gz 
+#contrail_version: 4.0.0.0-20
+
+contrail_package:
+contrail_ansible_package: 
+contrail_version: 
+
+EOF
+
+echo "master_hostname: $(sed -e 's/^"//' -e 's/"$//' <<<"$master")">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
+echo "node_hostname: $(sed -e 's/^"//' -e 's/"$//' <<<"$node")">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
+echo "">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
 
 echo "master_ip: $master_pip">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
 echo "node_ip: $node01_pip">>$DIR/ansible/playbooks/inventory/group_vars/all.yml
+echo "">>$DIR/ansible/playbooks/inventory/group_vars/all.yml

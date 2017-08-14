@@ -1,0 +1,39 @@
+docker_install_method: package
+docker_py_pkg_install_method: pip
+
+# ansible connection details
+ansible_user: root
+ansible_become: true
+ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+contrail_compute_mode: container
+
+os_release: ubuntu16.04
+
+# global_config:
+
+# contrail version
+contrail_version: {{ contrail_version }}
+
+# Name of the kubernetes cluster being provisioned.
+cloud_orchestrator: kubernetes
+
+# vrouter physical interface
+vrouter_physical_interface: eth0
+
+# global_config:
+
+analytics_api_config: {aaa_mode: no-auth}
+
+# To configure custom webui http port
+webui_config: {http_listen_port: 8085}
+
+# Name of the kubernetes cluster being provisioned.
+kubernetes_cluster_name: kubernetes
+
+# Access token to connect to Kuberenetes API server.
+# Added via shell script
+#kubernetes_access_token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImRlZmF1bHQtdG9rZW4tejc2anMiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImQzMDliYzU1LTYwMDQtMTFlNy04MTBhLTUyNTQwMGU2YTJhNSIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmRlZmF1bHQifQ.iOXPCOeCbkDG-WluMW6YHhbENiyEiwddn3-vvMhQNlQ6JlKDHMfTSQyY059JGeq3dQshK2_M9pf2_YosVm4or0sn2JhTOi1pjdOrqEQ15sDrZv8WGKwgYKNWqgEdJ5OeahNAJZpgZmJjjTpB5DXG8l05vA3IfG1yKZnF6CeiXgVWCd4wHBEk0C5Vp_lEz6NOPP6zB2dUs4QjBUQQ4-kZYkRc7a4uEVK7we6cJ7Q_quVgqC2d3sRcOusBa6qIcebkAXO7NtTxWWEU6z7wwh23OIIdD0tghv1OI2ZB32vn6J9fKVm-ISEm9lpalH5HYorc4jALTSZgDUkr7QoYWroXLw
+
+# Kubernetes API server IP.
+kubernetes_api_server: {{ master_ip }}

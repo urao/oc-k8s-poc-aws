@@ -1,29 +1,62 @@
 ---
 - name: Common system settings on all the hosts
-  hosts: all
+  hosts: localhost
   remote_user: root
-  #nothing to do in common in both the nodes as of now hence skipping
+  tasks:
+    - name: Populate install_contrail_pkgs.sh file with master and slave node ips
+      template: src=../files/install_contrail_pkgs.sh.j2 dest=../files/install_contrail_pkgs.sh
 
 - name: Setup master node 
   hosts: master
   remote_user: root
+  become: true
   tasks:
-    - name: Set kubeconfig 
-      command: "{{item}}"
-      with_items:
-       - cp /etc/kubernetes/admin.conf $HOME/
-       - chown $(id -u):$(id -g) $HOME/admin.conf
-       - export KUBECONFIG=$HOME/admin.conf
+    - name: Copy kubeadm file
+      copy: remote_src=True src=/etc/kubernetes/admin.conf dest=$HOME/
     - name: Populate hosts file
       shell: printf '127.0.0.1  {{ master_hostname }}\n' >> /etc/hosts
     - name: Get kubeadm token
-      command: kubeadm token list | awk {'print $1'} | sed -n 2p
-      register: command_output
-    - debug: msg="{{command_output.stdout}}"
-
-- name: Setup slave node 
+      shell: "kubeadm token list | awk {'print $1'} | sed -n 2p"
+      register: kubeadm_output
+    - name: Debug kubeadm token
+      debug: var=kubeadm_output.stdout
+    - set_fact:
+        kubeadm_token: "{{ kubeadm_output.stdout }}"
+        
+- name: Setup slave node
   hosts: nodes
   remote_user: root
+  become: true
   tasks:
+    - set_fact:
+        kubeadm: "{{hostvars[groups['master'][0]].kubeadm_token}}"
     - name: Populate hosts file
       shell: printf '127.0.0.1  {{ node_hostname }}\n' >> /etc/hosts
+    - name: Join node to master
+      command: "kubeadm join --token {{kubeadm}} {{master_ip}}:6443 --skip-preflight-checks"
+
+- name: Deploy Contrail with k8s
+  hosts: master
+  remote_user: root
+  become: true
+  tasks:
+    - name: Copy contrail package
+      copy: src=../files/{{ contrail_package }} dest=/root/{{ contrail_package }}
+    - name: Copy contrail ansible package
+      copy: src=../files/{{ contrail_ansible_package }} dest=/root/{{ contrail_ansible_package }}
+    - name: Create contrail_ansible directory
+      file: path=/root/contrail_ansible state=directory
+    - name: Unpack contrail ansible package
+      command: "tar -xvzf {{ contrail_ansible_package }} -C /root/contrail_ansible/"
+    - name: Create contrail container image directory
+      file: path=/root/contrail_ansible/playbooks/container_images state=directory
+    - name: Unpack contrail docker image package
+      command: "tar -xvzf {{ contrail_package }} -C /root/contrail_ansible/playbooks/container_images/"
+    - shell: /bin/rm -rf /root/contrail_ansible/playbooks/inventory/my-inventory/hosts
+    - name: Copy hosts jinja template to contrail_anisble folder
+      template: src=../files/hosts.j2 dest=/root/contrail_ansible/playbooks/inventory/my-inventory/hosts
+    - shell: /bin/rm -rf /root/contrail_ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+    - name: Copy all.yml jinja template to contrail_anisble folder
+      template: src=../files/all_yml.j2 dest=/root/contrail_ansible/playbooks/inventory/my-inventory/group_vars/all.yml
+    - name: Run contrail ansible install
+      script: ../files/install_contrail_pkgs.sh
