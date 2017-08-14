@@ -16,13 +16,12 @@ Steps to deploy contrail cloud:
 1. Git clone the repo
 2. Change directory 'cd opencontrail-k8s-poc-aws'
 3. Copy the opencontrail docker packages and ansible packages under ansible/files folder
-   1. Example, 
-   2. contrail_package: contrail-kubernetes-docker-images_4.0.0.0-20.tgz
+   1. contrail_package: contrail-kubernetes-docker-images_4.0.0.0-20.tgz
    2. contrail_ansible_package : contrail-ansible-4.0.0.0-20.tar.gz
 4. Run ./create_keypair.sh [Create KeyPair]
 5. Populate cstack-parameters.json located at (cloudformation/cluster) file with name of the EC2 instances (CCName1, CCName2)
 6. Create VPC, Subnet and 2 EC2 instances with host OS Ubuntu 16.04
-   1. Run ./create_ocontrail_stack.sh <stack-name> ocontrail.json cstack-parameters.json
+   1. Run ./create_ocontrail_stack.sh \<stack-name\> ocontrail.json cstack-parameters.json
 7. Verify cloudformation stack and populate cluster information 
    1. Run ./verify_ocontrail_stack.sh <stack-name>
 8. Modify contrail_package, contrail_ansible_package and contrail_version parameters in ansible/playbooks/inventory/group_vars/all.yml
