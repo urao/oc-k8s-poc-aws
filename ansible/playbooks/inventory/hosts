@@ -1,40 +1,4 @@
 [master]
-54.214.122.136
-
-[nodes]
-34.223.251.22
-
-[master]
-54.214.122.136
-
-[nodes]
-34.223.251.22
-
-[master]
-54.214.122.136     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[nodes]
-34.223.251.22     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[master]
-54.214.122.136     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[nodes]
-34.223.251.22     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[master]
-54.214.122.136     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[nodes]
-34.223.251.22     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[master]
-54.214.122.136     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[nodes]
-34.223.251.22     ansible_connection=ssh      ansible_ssh_pass=contrail123
-
-[master]
 54.214.122.136     ansible_connection=ssh      ansible_ssh_pass=contrail123
 
 [nodes]

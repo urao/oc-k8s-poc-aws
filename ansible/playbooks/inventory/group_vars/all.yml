@@ -13,21 +13,12 @@ host_key_checking: false
 # Common settings for contrail
 ##
 # contrail package
-contrail_package: contrail-kubernetes-docker-images_4.0.0.0-20.tgz
-ansible_package: contrail-ansible-4.0.0.0-20.tar.gz
+contrail_package: 
+contrail_ansible_package :  
+contrail_version: 
 
-
-master_ip: 10.59.0.163
-node_ip: 10.59.0.139
-master_hostname: "k8s-master"
-node_hostname: 
-master_ip: 10.59.0.163
-node_ip: 10.59.0.139
 master_hostname: "k8s-master"
 node_hostname: "k8s-node"
-master_ip: 10.59.0.163
-node_ip: 10.59.0.139
-master_hostname: "k8s-master"
-node_hostname: "k8s-node"
+
 master_ip: 10.59.0.163
 node_ip: 10.59.0.139
