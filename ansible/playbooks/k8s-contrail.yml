@@ -60,3 +60,13 @@
       template: src=../files/all_yml.j2 dest=/root/contrail_ansible/playbooks/inventory/my-inventory/group_vars/all.yml
     - name: Run contrail ansible install
       script: ../files/install_contrail_pkgs.sh
+  post_tasks:
+    - name: Reboot node
+      shell: sleep 15 && shutdown -r now "rebooting master node"
+      async: 20
+      poll: 0
+      become: yes
+      become_method: sudo
+      ignore_errors: true
+    - name: Waiting for master node to come back
+      local_action: wait_for port=22 host={{ ansible_ssh_host }} state=started delay=30 timeout=240
